@@ -22,6 +22,16 @@
         <li>
             <a href="{{ url_for('download', filename=document.filename) }}">{{ document.filename }}</a>
             Status: {{document.status}}
+
+            {% if role in ['person_2', 'person_3'] and document.status == 'Pending' %}
+            <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
+                <button type="submit">Approve</button>
+            </form>
+            <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
+                <button type="submit">Reject</button>
+            </form>
+            {% endif %}
+
         </li>
         {% endfor %}
     </ul>

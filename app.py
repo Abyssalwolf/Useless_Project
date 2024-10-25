@@ -3,6 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.utils import secure_filename
 import os
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.secret_key = 'sebinthomas'
@@ -16,6 +17,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///documents.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+migrate = Migrate(app, db)
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -77,6 +80,28 @@ def upload():
 def download(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/approve/<int:document_id>', methods=['POST'])
+@login_required
+def approve(document_id):
+    document = Document.query.get_or_404(document_id)
+    if current_user.role in ['person_2', 'person_3']:  # Assuming person_2 and person_3 can approve
+        document.status = 'Approved'
+        document.approver_id = current_user.id
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+    return "Not authorized", 403
+
+@app.route('/reject/<int:document_id>', methods=['POST'])
+@login_required
+def reject(document_id):
+    document = Document.query.get_or_404(document_id)
+    if current_user.role in ['person_2', 'person_3']:  # Assuming person_2 and person_3 can reject
+        document.status = 'Rejected'
+        document.approver_id = current_user.id
+        db.session.commit()
+        return redirect(url_for('dashboard'))
+    return "Not authorized", 403
+
 # Dashboard route where users see the document and actions
 @app.route('/dashboard')
 @login_required
@@ -98,6 +123,7 @@ class Document(db.Model):
     filename = db.Column(db.String(150), nullable=False)
     status = db.Column(db.String(20), default='Pending')  # Default status is 'Pending'
     user_id = db.Column(db.String(150), nullable=False)  # To track which user uploaded it
+    approver_id = db.Column(db.String(150))
 
     def __repr__(self):
         return f'<Document {self.filename} - {self.status}>'
