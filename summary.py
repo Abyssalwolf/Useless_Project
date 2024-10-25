@@ -54,12 +54,3 @@ def generate_summary_with_groq(full_text):
 
     return "\n\n".join(summaries)  # Join all summaries together
 
-# Input PDF file path
-input_pdf = "sample_input.pdf"  # Path to your input PDF file
-
-# Run extraction and summarization
-full_text = extract_text_from_pdf(input_pdf)
-summary = generate_summary_with_groq(full_text)
-
-print("Generated Summary:")
-print(summary)

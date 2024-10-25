@@ -44,12 +44,3 @@ def add_watermark(input_pdf, output_pdf, watermark_text, position):
     with open(output_pdf, "wb") as output:
         pdf_writer.write(output)
 
-# Test the function
-input_pdf = "sample_input.pdf"   # Path to your input PDF file
-output_pdf = "sample_output.pdf" # Path where the output will be saved
-watermark_text = "Confidential and Proprietary Information"  # The watermark text to be added
-
-# Run the watermark function with specified position
-add_watermark(input_pdf, output_pdf, watermark_text, position="bottom_right")
-
-print(f"Watermarked PDF saved as '{output_pdf}'")

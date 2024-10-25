@@ -21,27 +21,41 @@
         {% for document in documents %}
         <li>
             <a href="{{ url_for('download', filename=document.filename) }}">{{ document.filename }}</a>
-            <p>Status: {{document.status}}</p>
+            <p>Status: 
+                {% if document.approved_by_user_3 %}
+                    Final Approval by User 3
+                {% elif document.approved_by_user_2 %}
+                    Approved by User 2, Pending Final Approval by User 3
+                {% else %}
+                    Pending User 2 Approval
+                {% endif %}
+            </p>
             <p>Summary: {{ document.summary }}</p>
 
-            {% if role in ['person_2', 'person_3'] and document.status == 'Pending' %}
-            <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
-                <button type="submit">Approve</button>
-            </form>
-            <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
-                <button type="submit">Reject</button>
-            </form>
+            {% if role == "person_2" and document.status == 'Pending' and not document.approved_by_user_2 %}
+                <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Approve</button>
+                </form>
+                <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Reject</button>
+                </form>
+            {% elif role == "person_3" and document.approved_by_user_2 and not document.approved_by_user_3 %}
+                <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Approve as Final</button>
+                </form>
+                <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
+                    <button type="submit">Reject</button>
+                </form>
             {% endif %}
 
-            {% if role == "person_1" and file.status == "Final Approval by User 3" %}
-                <form action="{{ url_for('download', filename=document.filename) }}" method="get">
+            {% if role == "person_1" and document.approved_by_user_3 %}
+                <form action="{{ url_for('download', filename=document.filename) }}" method="get" style="display:inline;">
                     <button type="submit">Download</button>
                 </form>
-                <form action="{{ url_for('delete_document', doc_id=document.id) }}" method="post">
+                <form action="{{ url_for('delete_document', doc_id=document.id) }}" method="post" style="display:inline;">
                     <button type="submit">Delete</button>
                 </form>
             {% endif %}
-
         </li>
         {% endfor %}
     </ul>

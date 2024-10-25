@@ -44,6 +44,10 @@ users = {
 def load_user(user_id):
     return users.get(user_id)
 
+@app.route('/')
+def index():
+    return redirect(url_for('login'))
+
 # Route for logging in users
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -72,7 +76,7 @@ def upload():
             full_text = extract_text_from_pdf(file_path)
             summary = generate_summary_with_groq(full_text)
 
-            new_document=Document(filename=filename, status='Pending',user_id=current_user.id,summary=summary)
+            new_document=Document(filename=filename,file_path=file_path, status='Pending',user_id=current_user.id,summary=summary)
             db.session.add(new_document)
             db.session.commit()
             # Here, save the document metadata (file path, status, etc.) to a database
@@ -89,25 +93,36 @@ def download(filename):
 @login_required
 def approve(document_id):
     document = Document.query.get_or_404(document_id)
-    if document and (current_user.role == "person_2" or current_user.role == "person_3"):
-        if current_user.role == "person_2":
-            watermark_text = "Approved by User 2"
-            add_watermark(document.file_path, document.file_path, watermark_text)  # Apply watermark
-            document.status = "Approved by User 2"
-            document.approver_id = current_user.id
-            db.session.commit()
+    if current_user.role == "person_2" and not document.approved_by_user_2:
+        document.approved_by_user_2 = True
+        document.approver_id = current_user.id
+        db.session.commit()
+
+        # Add watermark indicating approval by User 2
+        input_pdf = os.path.join(app.config['UPLOAD_FOLDER'], document.filename)
+        output_pdf = os.path.join(app.config['UPLOAD_FOLDER'], f"user2_approved_{document.filename}")
+        add_watermark(input_pdf, output_pdf, "Approved by User 2", position="bottom_left")
+        document.filename = f"user2_approved_{document.filename}"
+        db.session.commit()
             # Pass the document to `person_3` view by changing roles/access
 
-        elif current_user.role == "person_3":
-            watermark_text = "Final Approval by User 3"
-            add_watermark(document.file_path, document.file_path, watermark_text)  # Apply watermark
-            document.status = "Final Approval by User 3"
-            document.approver_id = current_user.id
-            db.session.commit()
-            # Move document back to `person_1` for download and completion
+    elif current_user.role == "person_3" and not document.approved_by_user_3:
+        document.approved_by_user_3 = True
+        document.approver_id = current_user.id
+        document.status = "Final Approval"
+        db.session.commit()
 
-        return redirect(url_for('dashboard'))
-    return "Not authorized", 403
+        # Add final watermark indicating approval by User 3
+        input_pdf = os.path.join(app.config['UPLOAD_FOLDER'], document.filename)
+        output_pdf = os.path.join(app.config['UPLOAD_FOLDER'], f"user3_final_approved_{document.filename}")
+        add_watermark(input_pdf, output_pdf, "Approved by User 3 - Final Approval", position="bottom_right")
+        document.filename = f"user3_final_approved_{document.filename}"
+        db.session.commit()
+    
+    else:
+        return "Unauthorized", 403
+
+    return redirect(url_for('dashboard'))
 
 @app.route('/reject/<int:document_id>', methods=['POST'])
 @login_required
@@ -116,6 +131,9 @@ def reject(document_id):
     if current_user.role in ['person_2', 'person_3']:  # Assuming person_2 and person_3 can reject
         document.status = 'Rejected'
         document.approver_id = current_user.id
+        if os.path.exists(document.file_path):
+            os.remove(document.file_path)
+        db.session.delete(document)
         db.session.commit()
         return redirect(url_for('dashboard'))
     return "Not authorized", 403
@@ -133,7 +151,7 @@ def dashboard():
 def delete_document(doc_id):
     if current_user.role == "person_1":
         doc = Document.query.get(doc_id)
-        if doc and doc.status == "Final Approval by User 3":
+        if doc and doc.status == "Final Approval":
             os.remove(os.path.join(app.config['UPLOAD_FOLDER'], doc.filename))  # Delete file
             db.session.delete(doc)  # Delete from database
             db.session.commit()
@@ -150,9 +168,12 @@ def logout():
 class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(150), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False)
     status = db.Column(db.String(20), default='Pending')  # Default status is 'Pending'
     user_id = db.Column(db.String(150), nullable=False)  # To track which user uploaded it
     approver_id = db.Column(db.String(150))
+    approved_by_user_2 = db.Column(db.Boolean, default=False)
+    approved_by_user_3 = db.Column(db.Boolean, default=False)
     summary = db.Column(db.Text)
 
     def __repr__(self):
