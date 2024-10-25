@@ -4,6 +4,8 @@ from werkzeug.utils import secure_filename
 import os
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from summary import extract_text_from_pdf, generate_summary_with_groq
+from watermark import add_watermark
 
 app = Flask(__name__)
 app.secret_key = 'sebinthomas'
@@ -66,8 +68,11 @@ def upload():
             filename = secure_filename(file.filename)
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(file_path)
+            
+            full_text = extract_text_from_pdf(file_path)
+            summary = generate_summary_with_groq(full_text)
 
-            new_document=Document(filename=filename, status='Pending',user_id=current_user.id)
+            new_document=Document(filename=filename, status='Pending',user_id=current_user.id,summary=summary)
             db.session.add(new_document)
             db.session.commit()
             # Here, save the document metadata (file path, status, etc.) to a database
@@ -84,10 +89,23 @@ def download(filename):
 @login_required
 def approve(document_id):
     document = Document.query.get_or_404(document_id)
-    if current_user.role in ['person_2', 'person_3']:  # Assuming person_2 and person_3 can approve
-        document.status = 'Approved'
-        document.approver_id = current_user.id
-        db.session.commit()
+    if document and (current_user.role == "person_2" or current_user.role == "person_3"):
+        if current_user.role == "person_2":
+            watermark_text = "Approved by User 2"
+            add_watermark(document.file_path, document.file_path, watermark_text)  # Apply watermark
+            document.status = "Approved by User 2"
+            document.approver_id = current_user.id
+            db.session.commit()
+            # Pass the document to `person_3` view by changing roles/access
+
+        elif current_user.role == "person_3":
+            watermark_text = "Final Approval by User 3"
+            add_watermark(document.file_path, document.file_path, watermark_text)  # Apply watermark
+            document.status = "Final Approval by User 3"
+            document.approver_id = current_user.id
+            db.session.commit()
+            # Move document back to `person_1` for download and completion
+
         return redirect(url_for('dashboard'))
     return "Not authorized", 403
 
@@ -110,6 +128,17 @@ def dashboard():
     documents = Document.query.all()
     return render_template('dashboard.html', documents=documents, role=current_user.role)
 
+@app.route('/delete/<int:doc_id>', methods=['POST'])
+@login_required
+def delete_document(doc_id):
+    if current_user.role == "person_1":
+        doc = Document.query.get(doc_id)
+        if doc and doc.status == "Final Approval by User 3":
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], doc.filename))  # Delete file
+            db.session.delete(doc)  # Delete from database
+            db.session.commit()
+            return redirect(url_for('dashboard'))
+    return "Not authorized", 403
 
 # Logout route
 @app.route('/logout')
@@ -124,6 +153,7 @@ class Document(db.Model):
     status = db.Column(db.String(20), default='Pending')  # Default status is 'Pending'
     user_id = db.Column(db.String(150), nullable=False)  # To track which user uploaded it
     approver_id = db.Column(db.String(150))
+    summary = db.Column(db.Text)
 
     def __repr__(self):
         return f'<Document {self.filename} - {self.status}>'

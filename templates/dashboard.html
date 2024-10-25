@@ -21,7 +21,8 @@
         {% for document in documents %}
         <li>
             <a href="{{ url_for('download', filename=document.filename) }}">{{ document.filename }}</a>
-            Status: {{document.status}}
+            <p>Status: {{document.status}}</p>
+            <p>Summary: {{ document.summary }}</p>
 
             {% if role in ['person_2', 'person_3'] and document.status == 'Pending' %}
             <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
@@ -30,6 +31,15 @@
             <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
                 <button type="submit">Reject</button>
             </form>
+            {% endif %}
+
+            {% if role == "person_1" and file.status == "Final Approval by User 3" %}
+                <form action="{{ url_for('download', filename=document.filename) }}" method="get">
+                    <button type="submit">Download</button>
+                </form>
+                <form action="{{ url_for('delete_document', doc_id=document.id) }}" method="post">
+                    <button type="submit">Delete</button>
+                </form>
             {% endif %}
 
         </li>
