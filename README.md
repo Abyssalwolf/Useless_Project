@@ -4,13 +4,12 @@
 
 
 ## Basic Details
-### Team Name: [Name]
+### Team Name: All Stars
 
 
 ### Team Members
-- Team Lead: [Name] - [College]
-- Member 2: [Name] - [College]
-- Member 3: [Name] - [College]
+- Team Lead: Sebin Thomas - CUSAT
+- Member 2: Nidhin Jyothi - CUSAT
 
 ### Project Description
 [2-3 lines about what your project does]
@@ -24,15 +23,14 @@
 ## Technical Details
 ### Technologies/Components Used
 For Software:
-- [Languages used]
-- [Frameworks used]
-- [Libraries used]
-- [Tools used]
 
-For Hardware:
-- [List main components]
-- [List specifications]
-- [List tools required]
+Languages used - Html,CSS,Python
+
+Frameworks used - Groq,Flask
+
+Main Libraries used - Flask,Flask-Login,Flask-Mail,Flask-Migrate,Flask-SQLAlchemy,groq,PyPDF2,reportlab,SQLAlchemy,Werkzeug
+
+Tools used - 
 
 ### Implementation
 For Software:
