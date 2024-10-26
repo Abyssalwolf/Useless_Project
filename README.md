@@ -4,7 +4,7 @@
 
 
 ## Basic Details
-### Team Name: All Stars
+### Team Name: All_Stars
 
 
 ### Team Members
