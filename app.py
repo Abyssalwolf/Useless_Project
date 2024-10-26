@@ -34,9 +34,9 @@ class User(UserMixin):
 
 # Sample users dictionary (for hackathon purposes, replace with real database if needed)
 users = {
-    "1": User("1", "person_1"),
-    "2": User("2", "person_2"),
-    "3": User("3", "person_3")
+    "pattipani": User("pattipani", "person_1"),
+    "averagemanager": User("averagemanager", "person_2"),
+    "bossman": User("bossman", "person_3")
 }
 
 # User loader for Flask-Login

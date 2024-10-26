@@ -2,64 +2,83 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Welcome to the Dashboard</h1>
-    <h2>Role: {{ role }}</h2>
+<body class="bg-gradient-to-tr from-sky-200 to-sky-500">
+    <div class="container mx-auto p-4">
+        <header class="bg-sky-100 p-6 rounded shadow">
+            <h1 class="text-3xl font-bold text-sky-900">Welcome to the Dashboard</h1>
+            <h2 class="text-xl text-sky-700">Role: <span class="font-semibold">{{ role }}</span></h2>
+        </header>
 
-    {% if role == "person_1" %}
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <label for="document">Upload Document:</label>
-        <input type="file" name="document" id="document" required>
-        <button type="submit">Upload</button>
-    </form>
-    {% endif %}
+        {% if role == "person_1" %}
+        <section class="mt-6 bg-white p-4 rounded shadow">
+            <h2 class="text-2xl font-semibold text-sky-800">Upload Document</h2>
+            <form action="/upload" method="post" enctype="multipart/form-data" class="mt-4">
+                <label for="document" class="block text-sm font-medium text-gray-700">Choose a document:</label>
+                <input type="file" name="document" id="document" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-sky-500 focus:ring focus:ring-sky-500">
+                <button type="submit" class="mt-4 px-4 py-2 rounded-md bg-sky-600 text-white hover:bg-sky-700 transition duration-300">Upload</button>
+            </form>
+        </section>
+        {% endif %}
 
-    <h2>Available Documents</h2>
-    <ul>
-        {% for document in documents %}
-        <li>
-            <a href="{{ url_for('download', filename=document.filename) }}">{{ document.filename }}</a>
-            <p>Status: 
-                {% if document.approved_by_user_3 %}
-                    Final Approval by User 3
-                {% elif document.approved_by_user_2 %}
-                    Approved by User 2, Pending Final Approval by User 3
-                {% else %}
-                    Pending User 2 Approval
-                {% endif %}
-            </p>
-            <p>Summary: {{ document.summary }}</p>
+        <section class="mt-6 bg-white p-4 rounded shadow">
+            <h2 class="text-2xl font-semibold text-sky-800">Available Documents</h2>
+            <ul class="mt-4">
+                {% for document in documents %}
+                <li class="mb-4 p-3 border-b border-gray-200">
+                    <a href="{{ url_for('download', filename=document.filename) }}" class="text-blue-600 hover:underline">{{ document.filename }}</a>
+                    <p class="text-sm text-gray-600">Status: 
+                        {% if document.approved_by_user_3 %}
+                            <span class="text-green-600">Final Approval by User 3</span>
+                        {% elif document.approved_by_user_2 %}
+                            <span class="text-yellow-600">Approved by User 2, Pending Final Approval by User 3</span>
+                        {% else %}
+                            <span class="text-red-600">Pending User 2 Approval</span>
+                        {% endif %}
+                    </p>
+                    <p class="text-sm text-gray-500">Summary: {{ document.summary }}</p>
 
-            {% if role == "person_2" and document.status == 'Pending' and not document.approved_by_user_2 %}
-                <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
-                    <button type="submit">Approve</button>
-                </form>
-                <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
-                    <button type="submit">Reject</button>
-                </form>
-            {% elif role == "person_3" and document.approved_by_user_2 and not document.approved_by_user_3 %}
-                <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
-                    <button type="submit">Approve as Final</button>
-                </form>
-                <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
-                    <button type="submit">Reject</button>
-                </form>
-            {% endif %}
+                    {% if role == "person_2" and document.status == 'Pending' and not document.approved_by_user_2 %}
+                    <div class="mt-2">
+                        <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition duration-300">Approve</button>
+                        </form>
+                        <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-300">Reject</button>
+                        </form>
+                    </div>
+                    {% elif role == "person_3" and document.approved_by_user_2 and not document.approved_by_user_3 %}
+                    <div class="mt-2">
+                        <form action="{{ url_for('approve', document_id=document.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition duration-300">Approve as Final</button>
+                        </form>
+                        <form action="{{ url_for('reject', document_id=document.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-300">Reject</button>
+                        </form>
+                    </div>
+                    {% endif %}
 
-            {% if role == "person_1" and document.approved_by_user_3 %}
-                <form action="{{ url_for('download', filename=document.filename) }}" method="get" style="display:inline;">
-                    <button type="submit">Download</button>
-                </form>
-                <form action="{{ url_for('delete_document', doc_id=document.id) }}" method="post" style="display:inline;">
-                    <button type="submit">Delete</button>
-                </form>
-            {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
+                    {% if role == "person_1" and document.approved_by_user_3 %}
+                    <div class="mt-2">
+                        <form action="{{ url_for('download', filename=document.filename) }}" method="get" style="display:inline;">
+                            <button type="submit" class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300">Download</button>
+                        </form>
+                        <form action="{{ url_for('delete_document', doc_id=document.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition duration-300">Delete</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
 
-    <a href="/logout">Logout</a>
+        <footer class="mt-6">
+            <a href="/logout" class="text-blue-600 hover:underline">Logout</a>
+        </footer>
+    </div>
 </body>
 </html>

@@ -45,12 +45,28 @@ def generate_summary_with_groq(full_text):
                     )
                 }
             ],
-            model="gemma2-9b-it",
+            model="llama3-8b-8192",
             max_tokens=150  # Lower the token limit for shorter summaries
         )
         
         # Extract and append the summary from the response
         summaries.append(response.choices[0].message.content.strip())
 
-    return "\n\n".join(summaries)  # Join all summaries together
+    fin="\n\n".join(summaries)  # Join all summaries together
+    response = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": (
+                        "Briefly summarize the following text. Focus on key points and condense the information. "
+                        "Avoid using special characters and aim for a concise response:\n\n"
+                        f"{fin}"
+                    )
+                }
+            ],
+            model="llama3-8b-8192",
+            max_tokens=150  # Lower the token limit for shorter summaries
+        )
+    print(response)
+    return response.choices[0].message.content.strip()
 

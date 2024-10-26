@@ -29,8 +29,8 @@ def add_watermark(input_pdf, output_pdf, watermark_text, position):
 
     # Get the page dimensions from the first page
     first_page = pdf_reader.pages[0]
-    page_width = first_page.mediabox.width
-    page_height = first_page.mediabox.height
+    page_width = float(first_page.mediabox.width)
+    page_height = float(first_page.mediabox.height)
 
     # Create watermark based on dimensions
     packet = create_watermark(watermark_text, position, page_width, page_height)
